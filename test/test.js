@@ -1,11 +1,11 @@
 var test = require('tape')
-var wtch = require('../')
+var watch = require('../')
 var fs = require('fs')
 var path = require('path')
 
 test('should connect to live reload server', function(t) {
     var filepath = path.join(__dirname, 'tmp.txt')
-    var live = wtch(filepath)
+    var live = watch(filepath)
     t.plan(4)
     live.on('connect', function() {
         t.ok(true, 'connected to server')
@@ -28,7 +28,7 @@ test('should connect to live reload server', function(t) {
 
 test('should allow ignoring live reload events', function(t) {
     var filepath = path.join(__dirname, 'tmp.txt')
-    var live = wtch(filepath, { ignoreReload: filepath })
+    var live = watch(filepath, { ignoreReload: filepath })
     t.plan(3)
     live.on('connect', function() {
         t.ok(true, 'connected to server')
@@ -51,7 +51,7 @@ test('should allow ignoring live reload events', function(t) {
 test('should allow ignoring live reload events', function(t) {
     t.plan(4)
     var filepath = path.join(__dirname, 'tmp.txt')
-    var live = wtch(filepath, { 
+    var live = watch(filepath, { 
         ignoreReload: function(file) {
             t.equal(file, filepath, 'about to ignore file')
             return file === filepath

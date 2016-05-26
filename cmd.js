@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 var argv = require('minimist')(process.argv.slice(2))
 var wtch = require('./')
-var bole = require('bole')
 
 if (argv.p)
     argv.port = argv.p    
@@ -14,12 +13,6 @@ if (globs.length === 0) //otherwise wildcard w/ extensions
     globs = [ toExtension(extension) ]
 
 argv.cwd = argv.dir || argv.d
-
-//setup ndjson output
-bole.output({
-    level: 'debug', 
-    stream: process.stdout
-})
 
 wtch(globs, argv)
 process.stdin.pipe(process.stdout)

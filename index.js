@@ -1,7 +1,9 @@
 var xtend = require('xtend')
 var tinylr = require('tiny-lr')
 var watch = require('chokidar').watch
-var log = require('bole')('wtch')
+var log = require('pino')({
+  name: 'watch-lr'
+})
 var Emitter = require('events/')
 var match = require('minimatch')
 

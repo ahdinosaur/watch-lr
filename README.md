@@ -1,20 +1,20 @@
-# wtch
+# watch-lr
 
 [![stable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 
 A small command-line app that watches for file changes and triggers a live-reload on file save (using [LiveReload](http://livereload.com/)). Watches the current working directory for `js,html,css` file changes. Ignores `.git`, `node_modules`, and `bower_components`, and other hidden files. 
 
 ```sh
-npm install wtch -g
+npm install watch-lr -g
 
 #start watching ..
-wtch
+watch-lr
 ```
 
-You can use [garnish](https://github.com/mattdesl/garnish) for pretty-printing logs and limiting log level. 
+You can use [pino](https://github.com/mcollina/pino) for pretty-printing logs.
 
 ```js
-wtch | garnish --level debug
+watch-lr | pino
 ```
 
 See [setup](#livereload-setup) for a basic how-to, and [tooling](#Tooling) for more advanced uses with browserify, watchify, etc.
@@ -23,11 +23,11 @@ PRs/suggestions welcome.
 
 ## Usage
 
-[![NPM](https://nodei.co/npm/wtch.png)](https://www.npmjs.com/package/wtch)
+[![NPM](https://nodei.co/npm/watch-lr.png)](https://www.npmjs.com/package/watch-lr)
 
 ```sh
 Usage:
-    wtch [globs] [opts]
+    watch-lr [globs] [opts]
 
 Options:
     --dir -d        current working directory to watch (defaults to cwd)
@@ -40,12 +40,14 @@ Options:
 By default, it looks for `**/*` with the specified extensions. If `globs` is specified, they will *override* this behaviour. So you can do this to only watch a single file:
 
 ```
-wtch bundle.js
+watch-lr bundle.js
 ```
 
 ## API
 
-#### `live = wtch(glob, [opt])`
+#### `watch = require('watch-lr')`
+
+#### `live = watch(glob, [opt])`
 
 Returns a through stream that watches the glob (or array of globs) and returns an event emitter.
 
@@ -58,7 +60,7 @@ Supported options:
 - `ignoreReload` allows ignoring LiveReload events for specific files; can be a file path, or an array of paths, or a function that returns `true` to ignore the reload, Example:
 
 ```js
-wtch('**/*.js', { 
+watch('**/*.js', { 
   ignoreReload: function(file) {
     //don't trigger LiveReload for this file
     if (file === fileToIgnore)
@@ -96,6 +98,8 @@ You can insert the following script tag in your HTML file. This will work across
 
 Or you could use [inject-lr-script](https://github.com/mattdesl/inject-lr-script) to inject it while serving HTML content.
 
+Or you could use [ecstatic-lr](https://github.com/ahdinosaur/ecstatic-lr) to serve static files with automatic injection.
+
 #### Browser Plugin
 
 First, install the LiveReload plugin for your browser of choice (e.g. [Chrome](https://chrome.google.com/webstore/detail/livereload/jnihajbhpnppcggbcgedagnkighmdlei?hl=en)). 
@@ -103,7 +107,7 @@ First, install the LiveReload plugin for your browser of choice (e.g. [Chrome](h
 Now, install some tools globally. 
 
 ```sh
-npm install wtch http-server garnish -g
+npm install watch-lr http-server pino -g
 ```
 
 Create a basic `index.html` file that references scripts and/or CSS files.
@@ -111,7 +115,7 @@ Create a basic `index.html` file that references scripts and/or CSS files.
 Then, you can run your development server like so:
 
 ```sh
-http-server | wtch | garnish
+http-server | watch-lr | pino
 ```
 
 Open `localhost:8080` and enable LiveReload by clicking the plugin. The center circle will turn black. You may need to refresh the page first.
@@ -125,13 +129,13 @@ Now when you save a JS/HTML/CSS file in the current directory, it will trigger a
 This can be used for live-reloading alongside [wzrd](https://github.com/maxogden/wzrd), [beefy](https://github.com/maxogden/beefy) and similar development servers. For example:   
 
 ```sh
-wzrd test/index.js | wtch --dir test -e js,css,es6 | garnish
+ecstatic-lr test | watch-lr -d test -e js,css,es6 | pino
 ```
 
 It can also be used to augment [watchify](https://github.com/maxogden/watchify) with a browser live-reload event. This is better suited for larger bundles.
 
 ```sh
-watchify index.js -o bundle.js | wtch bundle.js
+watchify index.js -o bundle.js | watch-lr bundle.js
 ```
 
 See [this package.json's](https://github.com/mattdesl/wtch/blob/master/package.json) script field for more detailed examples. 

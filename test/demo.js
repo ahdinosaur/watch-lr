@@ -1,1 +1,1 @@
-console.log("Try s modifying this script!")
+console.log("Try s modifying this script!")
