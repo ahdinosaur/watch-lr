@@ -1,96 +1,93 @@
 var xtend = require('xtend')
-var tinylr = require('tiny-lr')
-var watch = require('chokidar').watch
-var log = require('pino')({
-  name: 'watch-lr'
-})
-var Emitter = require('events/')
-var match = require('minimatch')
+var LiveReload = require('tiny-lr')
+var watch = require('pull-watch')
+var pull = require('pull-stream/pull')
+var map = require('pull-stream/throughs/map')
+var filter = require('pull-stream/throughs/filter')
+var drain = require('pull-stream/sinks/drain')
+var Notify = require('pull-notify')
+var parallel = require('run-parallel')
 
-var ignore = [
-    'node_modules/**', 'bower_components/**',
-    '.git', '.hg', '.svn', '.DS_Store',
-    '*.swp', 'thumbs.db', 'desktop.ini'
-]
+module.exports = watchLive
 
-module.exports = function wtch(glob, opt) {
-    opt = xtend({
-        port: 35729,
-        host: 'localhost',
-        event: 'change',
-        ignored: ignore,
-        ignoreInitial: true
-    }, opt)
+function watchLive (paths, options, onReady) {
+  if (arguments.length === 2) {
+    onReady = options
+    options = {}
+  }
 
-    if (typeof opt.port !== 'number')
-        opt.port = 35729
+  options = xtend({
+    port: 35729,
+    host: 'localhost',
+    event: 'change'
+  }, options)
 
-    var ignoreReload = opt.ignoreReload
-    var emitter = new Emitter()
-    var server = tinylr()
-    var closed = false
-    var watcher
+  var livereload = LiveReload()
+  var notify = Notify()
+  var server, watcher
 
-    if (opt.poll)
-        opt.usePolling = true
-    
-    server.listen(opt.port, opt.host, function () {
-        if (closed)
-            return
+  var stream = {
+    listen, abort, end
+  }
 
-        log.info('livereload running on '+opt.port)
-        watcher = watch(glob, opt)
-        watcher.on(opt.event, opt.event === 'all'
-                ? reload
-                : reload.bind(null, 'change'))
+  parallel([
+    function (cb) {
+      livereload.listen(options.port, options.host, function () {
+        cb(null)
+      })
+    },
+    function (cb) {
+      var watchOptions = xtend(options, {
+        ignored: isFunction(options.ignore) ? null : options.ignore
+      })
+      watcher = watch(paths, watchOptions, function () {
+        cb(null, watcher)
+      })
 
-        emitter.emit('connect', server)
-    })
-
-    function reload(event, path) {
-        emitter.emit('watch', event, path)
-        log.debug({ type: event, url: path })
-
-        if ((Array.isArray(ignoreReload) || typeof ignoreReload === 'string')
-                && reject(path, ignoreReload)) {
-            return
-        } else if (typeof ignoreReload === 'function' && ignoreReload(path)) {
-            return
-        }
-
-        try {
-            server.changed({ body: { files: [ path ] } })
-            emitter.emit('reload', path)
-        } catch (e) {
-            throw e
-        }
+      pull(
+        watcher.listen(),
+        filter(function (event) {
+          if (options.event === 'all') {
+            return true
+          }
+          return event.type === options.event
+        }),
+        map(function (event) { return event.path }),
+        filter(function (path) {
+          if (isFunction(options.ignore)) {
+            return !options.ignore(path)
+          }
+          return true
+        }),
+        drain(function (path) {
+          livereload.changed(path)
+          notify(path)
+        })
+      )
     }
+  ], function (server, watcher) {
+    if (onReady) onReady(server, watcher, stream)
+  })
 
-    var serverImpl = server.server
-    serverImpl.removeAllListeners('error')
-    serverImpl.on('error', function(err) {
-        if (err.code === 'EADDRINUSE') {
-            process.stderr.write('ERROR: livereload not started, port '+opt.port+' is in use\n')
-            server.close()
-        }
-    })
+  livereload.server.on('error', abort)
 
-    emitter.close = function() {
-        server.close()
-        if (watcher)
-            watcher.close()
-        closed = true
-    }
+  return stream
 
-    return emitter
+  function listen () {
+    return notify.listen()
+  }
+
+  function abort (err) {
+    notify.abort(err)
+    watcher.abort(err)
+    livereload.close()
+  }
+
+  function end () {
+    abort(true)
+  }
 }
 
-function reject(file, ignores) {
-    if (!ignores)
-        return false
-    if (!Array.isArray(ignores))
-        ignores = [ ignores ]
-    return ignores.some(function(ignore) {
-        return match(file, ignore)
-    })
+function isFunction (fn) {
+  return typeof fn === 'function'
 }

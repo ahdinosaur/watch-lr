@@ -13,13 +13,14 @@
     "url": "https://github.com/mattdesl"
   },
   "dependencies": {
-    "chokidar": "^1.2.0",
-    "events": "^1.0.2",
-    "minimatch": "^2.0.1",
-    "minimist": "^1.1.0",
-    "pino": "^2.4.3",
-    "through2": "^0.6.3",
-    "tiny-lr": "^0.1.5",
+    "cliclopts": "^1.1.1",
+    "minimist": "^1.2.0",
+    "parse-regexp": "0.0.1",
+    "pino": "^2.4.4",
+    "pull-stream": "^3.4.0",
+    "pull-watch": "^1.0.1",
+    "run-parallel": "^1.1.6",
+    "tiny-lr": "^0.2.1",
     "xtend": "^4.0.0"
   },
   "devDependencies": {
