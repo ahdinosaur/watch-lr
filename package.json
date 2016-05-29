@@ -1,6 +1,6 @@
 {
   "name": "watch-lr",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "small livereload/watch command line utility",
   "main": "index.js",
   "license": "MIT",
